@@ -37,9 +37,9 @@ now.getSeconds().toString().padStart(2,'0');
 
 const stripeLink = "https://buy.stripe.com/test_eVq00i69Eedlfss4Cefbq00";
 
-const url = stripeLink + "?prefilled_exact_second=" + encodeURIComponent(time);
+const fullLink = stripeLink + "?prefilled_custom_fields[0][value]=" + encodeURIComponent(time);
 
-window.location.href = url;
+window.location.href = fullLink;
 
 }
 </script>
