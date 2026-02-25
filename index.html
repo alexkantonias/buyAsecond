@@ -13,10 +13,13 @@
       font-size: 60px;
       margin-bottom: 20px;
     }
-    button {
+    input, button {
       font-size: 20px;
-      padding: 15px 30px;
-      cursor: pointer;
+      padding: 10px;
+      margin: 5px;
+    }
+    input {
+      width: 300px;
     }
   </style>
 </head>
@@ -24,6 +27,8 @@
 
   <div id="clock">00:00:00</div>
 
+  <input id="messageInput" placeholder="Γράψε το μήνυμα σου" />
+  <br/>
   <button onclick="buySecond()">BUY THIS SECOND – €1</button>
 
   <script>
@@ -46,11 +51,16 @@
         now.getMinutes().toString().padStart(2,'0') + ":" +
         now.getSeconds().toString().padStart(2,'0');
 
-      // Στέλνουμε το second στο Vercel API
-      const response = await fetch(`/api/create-checkout-session?second=${second}`);
+      const message = document.getElementById("messageInput").value;
+
+      if(message.trim() === ""){
+        alert("Γράψε ένα μήνυμα πριν αγοράσεις!");
+        return;
+      }
+
+      const response = await fetch(`/api/create-checkout-session?second=${second}&message=${encodeURIComponent(message)}`);
       const data = await response.json();
 
-      // Άνοιγμα Stripe Checkout
       window.location.href = data.url;
     }
   </script>
