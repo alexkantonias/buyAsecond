@@ -26,6 +26,25 @@ padding:15px 30px;
 <button onclick="buySecond()">BUY THIS SECOND – €1</button>
 
 <script>
+
+async function buySecond(){
+
+const now = new Date();
+
+const second =
+now.getHours().toString().padStart(2,'0') + ":" +
+now.getMinutes().toString().padStart(2,'0') + ":" +
+now.getSeconds().toString().padStart(2,'0');
+
+const response = await fetch(`/api/create-checkout-session?second=${second}`);
+
+const data = await response.json();
+
+window.location.href = data.url;
+
+}
+
+</script>
 function buySecond(){
 
 const now = new Date();
