@@ -36,7 +36,7 @@
 <script>
   const display = document.getElementById("display");
 
-  // Αγορά second
+  // Function για αγορά second
   async function buySecond(){
     const now = new Date();
     const second = now.getHours().toString().padStart(2,'0') + ":" +
@@ -53,34 +53,42 @@
     if(!confirmMsg) return;
 
     // Στέλνουμε στο backend
-    const response = await fetch(`/api/create-checkout-session?second=${second}&message=${encodeURIComponent(message)}`);
-    const data = await response.json();
-
-    // Redirect σε Stripe Checkout
-    window.location.href = data.url;
+    try {
+      const response = await fetch(`/api/create-checkout-session?second=${second}&message=${encodeURIComponent(message)}`);
+      const data = await response.json();
+      window.location.href = data.url; // Άνοιγμα Stripe Checkout
+    } catch(e){
+      alert("Κάτι πήγε στραβά, δοκίμασε ξανά.");
+      console.error(e);
+    }
   }
 
-  // Ενημέρωση display: ρολόι ή μήνυμα
+  // Function για live clock + εμφάνιση μηνύματος
   async function updateDisplay(){
     const now = new Date();
     const currentSecond = now.getHours().toString().padStart(2,'0') + ":" +
                           now.getMinutes().toString().padStart(2,'0') + ":" +
                           now.getSeconds().toString().padStart(2,'0');
 
-    // Τράβα μήνυμα για το current second
-    const res = await fetch(`/api/get-messages?second=${currentSecond}`);
-    const data = await res.json();
+    // Βάζουμε το clock αμέσως
+    display.innerText = currentSecond;
 
-    if(data.messages && data.messages.length > 0){
-      // Υποθέτουμε ότι παίρνουμε 1ο μήνυμα αν υπάρχουν πολλα
-      display.innerText = data.messages[0].message;
-    } else {
-      // Δεν υπάρχει μήνυμα → δείχνουμε live ρολόι
-      display.innerText = currentSecond;
+    // Τράβα μήνυμα για το current second
+    try {
+      const res = await fetch(`/api/get-messages?second=${currentSecond}`);
+      const data = await res.json();
+
+      if(data.messages && data.messages.length > 0){
+        // Αν υπάρχει μήνυμα → αντικαθιστά το clock
+        display.innerText = data.messages[0].message;
+      }
+    } catch(e){
+      console.error(e);
+      // Αν κάτι πάει στραβά, το clock συνεχίζει να τρέχει
     }
   }
 
-  setInterval(updateDisplay, 1000);
+  setInterval(updateDisplay, 1000); // Ανανεώνουμε κάθε δευτερόλεπτο
 </script>
 
 </body>
