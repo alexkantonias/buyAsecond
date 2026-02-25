@@ -2,18 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Buy A Second – Live Wall</title>
+  <title>Buy A Second – Live Clock with Messages</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin-top: 50px;
     }
-    #messagesWall {
-      font-size: 24px;
-      margin-top: 30px;
-      color: #222;
-      min-height: 100px;
+    #display {
+      font-size: 60px;
+      margin-bottom: 20px;
     }
     input, button {
       font-size: 18px;
@@ -27,16 +25,18 @@
 </head>
 <body>
 
-<h1>Buy A Second – Live Wall</h1>
+<h1>Buy A Second</h1>
+
+<div id="display">00:00:00</div>
 
 <input id="messageInput" placeholder="Γράψε το μήνυμα σου" />
 <br/>
 <button onclick="buySecond()">BUY THIS SECOND – €1</button>
 
-<div id="messagesWall">Τα μηνύματα που έχουν αγοραστεί θα εμφανιστούν εδώ</div>
-
 <script>
-  // Function για αγορά
+  const display = document.getElementById("display");
+
+  // Αγορά second
   async function buySecond(){
     const now = new Date();
     const second = now.getHours().toString().padStart(2,'0') + ":" +
@@ -56,30 +56,31 @@
     const response = await fetch(`/api/create-checkout-session?second=${second}&message=${encodeURIComponent(message)}`);
     const data = await response.json();
 
-    // Άνοιγμα Stripe Checkout
+    // Redirect σε Stripe Checkout
     window.location.href = data.url;
   }
 
-  // Function για live wall
-  async function updateMessages(){
+  // Ενημέρωση display: ρολόι ή μήνυμα
+  async function updateDisplay(){
     const now = new Date();
     const currentSecond = now.getHours().toString().padStart(2,'0') + ":" +
                           now.getMinutes().toString().padStart(2,'0') + ":" +
                           now.getSeconds().toString().padStart(2,'0');
 
-    // Τράβα μηνύματα από backend
+    // Τράβα μήνυμα για το current second
     const res = await fetch(`/api/get-messages?second=${currentSecond}`);
     const data = await res.json();
 
-    const wall = document.getElementById("messagesWall");
     if(data.messages && data.messages.length > 0){
-      wall.innerText = data.messages.map(m => m.message).join(" | ");
+      // Υποθέτουμε ότι παίρνουμε 1ο μήνυμα αν υπάρχουν πολλα
+      display.innerText = data.messages[0].message;
     } else {
-      wall.innerText = "Δεν υπάρχουν μηνύματα για αυτό το second";
+      // Δεν υπάρχει μήνυμα → δείχνουμε live ρολόι
+      display.innerText = currentSecond;
     }
   }
 
-  setInterval(updateMessages, 1000); // ανανεώνει κάθε δευτερόλεπτο
+  setInterval(updateDisplay, 1000);
 </script>
 
 </body>
