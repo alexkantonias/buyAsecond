@@ -2,89 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Buy A Second</title>
+  <title>Buy A Second – Live Wall</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin-top: 100px;
+      margin-top: 50px;
     }
-    #clock {
-      font-size: 60px;
-      margin-bottom: 20px;
+    #messagesWall {
+      font-size: 24px;
+      margin-top: 30px;
+      color: #222;
+      min-height: 100px;
     }
     input, button {
-      font-size: 20px;
-      padding: 10px;
+      font-size: 18px;
+      padding: 8px;
       margin: 5px;
     }
     input {
       width: 300px;
     }
-    #previewMessage {
-      margin-top: 10px;
-      font-size: 18px;
-      color: #333;
-    }
   </style>
 </head>
 <body>
 
-  <div id="clock">00:00:00</div>
+<h1>Buy A Second – Live Wall</h1>
 
-  <input id="messageInput" placeholder="Γράψε το μήνυμα σου" />
-  <br/>
-  <div id="previewMessage">Το μήνυμα σου θα εμφανιστεί εδώ</div>
-  <br/>
-  <button onclick="buySecond()">BUY THIS SECOND – €1</button>
+<input id="messageInput" placeholder="Γράψε το μήνυμα σου" />
+<br/>
+<button onclick="buySecond()">BUY THIS SECOND – €1</button>
 
-  <script>
-    // Live clock
-    function updateClock() {
-      const now = new Date();
-      const time =
-        now.getHours().toString().padStart(2,'0') + ":" +
-        now.getMinutes().toString().padStart(2,'0') + ":" +
-        now.getSeconds().toString().padStart(2,'0');
-      document.getElementById("clock").innerText = time;
+<div id="messagesWall">Τα μηνύματα που έχουν αγοραστεί θα εμφανιστούν εδώ</div>
+
+<script>
+  // Function για αγορά
+  async function buySecond(){
+    const now = new Date();
+    const second = now.getHours().toString().padStart(2,'0') + ":" +
+                   now.getMinutes().toString().padStart(2,'0') + ":" +
+                   now.getSeconds().toString().padStart(2,'0');
+
+    const message = document.getElementById("messageInput").value.trim();
+    if(!message){
+      alert("Γράψε ένα μήνυμα πριν αγοράσεις!");
+      return;
     }
-    setInterval(updateClock, 1000);
 
-    // Live preview του μηνύματος
-    document.getElementById("messageInput").addEventListener("input", ()=>{
-      const msg = document.getElementById("messageInput").value;
-      document.getElementById("previewMessage").innerText = msg 
-        ? `Μήνυμα που θα πληρώσεις: "${msg}"`
-        : "Το μήνυμα σου θα εμφανιστεί εδώ";
-    });
+    const confirmMsg = confirm(`Θέλεις να αγοράσεις το second ${second} με μήνυμα:\n"${message}" ?`);
+    if(!confirmMsg) return;
 
-    // Buy button
-    async function buySecond(){
-      const now = new Date();
-      const second =
-        now.getHours().toString().padStart(2,'0') + ":" +
-        now.getMinutes().toString().padStart(2,'0') + ":" +
-        now.getSeconds().toString().padStart(2,'0');
+    // Στέλνουμε στο backend
+    const response = await fetch(`/api/create-checkout-session?second=${second}&message=${encodeURIComponent(message)}`);
+    const data = await response.json();
 
-      const message = document.getElementById("messageInput").value.trim();
+    // Άνοιγμα Stripe Checkout
+    window.location.href = data.url;
+  }
 
-      if(!message){
-        alert("Γράψε ένα μήνυμα πριν αγοράσεις!");
-        return;
-      }
+  // Function για live wall
+  async function updateMessages(){
+    const now = new Date();
+    const currentSecond = now.getHours().toString().padStart(2,'0') + ":" +
+                          now.getMinutes().toString().padStart(2,'0') + ":" +
+                          now.getSeconds().toString().padStart(2,'0');
 
-      // Confirmation dialog
-      const confirmMsg = confirm(`Θέλεις να αγοράσεις το second ${second} με μήνυμα:\n"${message}" ?`);
-      if(!confirmMsg) return;
+    // Τράβα μηνύματα από backend
+    const res = await fetch(`/api/get-messages?second=${currentSecond}`);
+    const data = await res.json();
 
-      // Στέλνουμε στο backend
-      const response = await fetch(`/api/create-checkout-session?second=${second}&message=${encodeURIComponent(message)}`);
-      const data = await response.json();
-
-      // Άνοιγμα Stripe Checkout
-      window.location.href = data.url;
+    const wall = document.getElementById("messagesWall");
+    if(data.messages && data.messages.length > 0){
+      wall.innerText = data.messages.map(m => m.message).join(" | ");
+    } else {
+      wall.innerText = "Δεν υπάρχουν μηνύματα για αυτό το second";
     }
-  </script>
+  }
+
+  setInterval(updateMessages, 1000); // ανανεώνει κάθε δευτερόλεπτο
+</script>
 
 </body>
 </html>
